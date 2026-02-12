@@ -1,0 +1,15 @@
+{
+  "cycle": 1,
+  "timestamp": "2026-02-12T09:00:00-05:00",
+  "goals": [
+    {"id": "build-clean", "result": "pass", "weight": 10},
+    {"id": "tests-pass", "result": "pass", "weight": 10},
+    {"id": "vet-clean", "result": "pass", "weight": 9},
+    {"id": "phase2-sensor-sim", "result": "pass", "weight": 8},
+    {"id": "phase3-classifier", "result": "fail", "weight": 7},
+    {"id": "phase4-task-manager", "result": "fail", "weight": 6},
+    {"id": "phase5-lattice-cli", "result": "fail", "weight": 5},
+    {"id": "phase6-mesh-relay", "result": "fail", "weight": 4},
+    {"id": "phase7-k8s-deploy", "result": "fail", "weight": 3}
+  ]
+}

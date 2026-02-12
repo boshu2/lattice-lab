@@ -1,0 +1,1 @@
+Phase 2 complete. Plan: 3 new files (simulator.go, simulator_test.go, cmd/sensor-sim/main.go) + Makefile update. Key patterns: gRPC client from generated stubs, anypb.New() for component packing, dead-reckoning for track movement, DC metro bounding box.

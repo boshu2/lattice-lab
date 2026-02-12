@@ -1,0 +1,1 @@
+Phase 1 complete. Codebase fully explored. gRPC client pattern established from test code. Component packing via anypb.New(). Need 3 new files: internal/sensor/simulator.go, internal/sensor/simulator_test.go, cmd/sensor-sim/main.go. Plus Makefile update.

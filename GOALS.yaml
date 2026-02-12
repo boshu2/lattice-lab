@@ -1,0 +1,48 @@
+version: 1
+mission: "Mini Lattice in Go — learn distributed systems (gRPC, Protobuf, Entity-Component, microservices)"
+
+goals:
+  - id: build-clean
+    description: "All packages build without errors"
+    check: "go build ./..."
+    weight: 10
+
+  - id: tests-pass
+    description: "All tests pass with race detector"
+    check: "go test -race ./..."
+    weight: 10
+
+  - id: vet-clean
+    description: "go vet reports no issues"
+    check: "go vet ./..."
+    weight: 9
+
+  - id: phase2-sensor-sim
+    description: "Phase 2: sensor-sim binary exists with simulator + tests"
+    check: "test -f internal/sensor/simulator.go && test -f internal/sensor/simulator_test.go && test -f cmd/sensor-sim/main.go && go test ./internal/sensor/"
+    weight: 8
+
+  - id: phase3-classifier
+    description: "Phase 3: classifier service watches tracks and adds classification/threat components"
+    check: "test -f internal/classifier/classifier.go && test -f internal/classifier/classifier_test.go && test -f cmd/classifier/main.go && go test ./internal/classifier/"
+    weight: 7
+
+  - id: phase4-task-manager
+    description: "Phase 4: task-manager with state machines for orchestration"
+    check: "test -f internal/task/manager.go && test -f internal/task/manager_test.go && test -f cmd/task-manager/main.go && go test ./internal/task/"
+    weight: 6
+
+  - id: phase5-lattice-cli
+    description: "Phase 5: CLI tool for operator interface (Cobra-based)"
+    check: "test -f cmd/lattice-cli/main.go && go build -o /dev/null ./cmd/lattice-cli/"
+    weight: 5
+
+  - id: phase6-mesh-relay
+    description: "Phase 6: P2P mesh relay with partition tolerance"
+    check: "test -f internal/mesh/relay.go && test -f internal/mesh/relay_test.go && go test ./internal/mesh/"
+    weight: 4
+
+  - id: phase7-k8s-deploy
+    description: "Phase 7: Kubernetes deployment manifests and Dockerfiles"
+    check: "test -f deploy/Dockerfile && test -f deploy/k8s/entity-store.yaml"
+    weight: 3
