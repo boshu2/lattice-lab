@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package store.v1;
+
+option go_package = "github.com/boshu2/lattice-lab/gen/store/v1;storev1";
+
+import "google/protobuf/empty.proto";
+import "entity/v1/entity.proto";
+
+service EntityStoreService {
+  rpc CreateEntity(CreateEntityRequest) returns (entity.v1.Entity);
+  rpc GetEntity(GetEntityRequest) returns (entity.v1.Entity);
+  rpc ListEntities(ListEntitiesRequest) returns (ListEntitiesResponse);
+  rpc UpdateEntity(UpdateEntityRequest) returns (entity.v1.Entity);
+  rpc DeleteEntity(DeleteEntityRequest) returns (google.protobuf.Empty);
+  rpc WatchEntities(WatchEntitiesRequest) returns (stream EntityEvent);
+}
+
+message CreateEntityRequest {
+  entity.v1.Entity entity = 1;
+}
+
+message GetEntityRequest {
+  string id = 1;
+}
+
+message ListEntitiesRequest {
+  entity.v1.EntityType type_filter = 1;
+}
+
+message ListEntitiesResponse {
+  repeated entity.v1.Entity entities = 1;
+}
+
+message UpdateEntityRequest {
+  entity.v1.Entity entity = 1;
+}
+
+message DeleteEntityRequest {
+  string id = 1;
+}
+
+message WatchEntitiesRequest {
+  entity.v1.EntityType type_filter = 1;
+}
+
+enum EventType {
+  EVENT_TYPE_UNSPECIFIED = 0;
+  EVENT_TYPE_CREATED = 1;
+  EVENT_TYPE_UPDATED = 2;
+  EVENT_TYPE_DELETED = 3;
+}
+
+message EntityEvent {
+  EventType type = 1;
+  entity.v1.Entity entity = 2;
+}

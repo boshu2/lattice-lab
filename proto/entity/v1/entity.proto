@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package entity.v1;
+
+option go_package = "github.com/boshu2/lattice-lab/gen/entity/v1;entityv1";
+
+import "google/protobuf/any.proto";
+import "google/protobuf/timestamp.proto";
+
+enum EntityType {
+  ENTITY_TYPE_UNSPECIFIED = 0;
+  ENTITY_TYPE_ASSET = 1;
+  ENTITY_TYPE_TRACK = 2;
+  ENTITY_TYPE_GEO = 3;
+}
+
+enum ThreatLevel {
+  THREAT_LEVEL_UNSPECIFIED = 0;
+  THREAT_LEVEL_NONE = 1;
+  THREAT_LEVEL_LOW = 2;
+  THREAT_LEVEL_MEDIUM = 3;
+  THREAT_LEVEL_HIGH = 4;
+}
+
+message Entity {
+  string id = 1;
+  EntityType type = 2;
+  map<string, google.protobuf.Any> components = 3;
+  google.protobuf.Timestamp created_at = 4;
+  google.protobuf.Timestamp updated_at = 5;
+}
+
+// Components — composable data bags attached to entities.
+
+message PositionComponent {
+  double lat = 1;
+  double lon = 2;
+  double alt = 3;
+}
+
+message VelocityComponent {
+  double speed = 1;
+  double heading = 2;
+}
+
+message ClassificationComponent {
+  string label = 1;
+  float confidence = 2;
+}
+
+message TaskCatalogComponent {
+  repeated string available_tasks = 1;
+}
+
+message ThreatComponent {
+  ThreatLevel level = 1;
+}
