@@ -23,7 +23,7 @@ func main() {
 
 	root.PersistentFlags().StringVar(&storeAddr, "store", "localhost:50051", "entity-store address")
 
-	root.AddCommand(listCmd(), getCmd(), watchCmd())
+	root.AddCommand(listCmd(), getCmd(), watchCmd(), approveCmd(), denyCmd())
 
 	if err := root.Execute(); err != nil {
 		os.Exit(1)
@@ -145,6 +145,56 @@ func watchCmd() *cobra.Command {
 				comps := componentNames(event.Entity)
 				fmt.Printf("[%s] %s  components=%s\n", event.Type, event.Entity.Id, comps)
 			}
+		},
+	}
+}
+
+func approveCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "approve <entity-id>",
+		Short: "Approve a pending intercept action",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			client, cleanup, err := dial()
+			if err != nil {
+				return err
+			}
+			defer cleanup()
+
+			e, err := client.ApproveAction(context.Background(), &storev1.ApproveActionRequest{
+				EntityId: args[0],
+			})
+			if err != nil {
+				return fmt.Errorf("approve %s: %w", args[0], err)
+			}
+
+			fmt.Printf("Approved: %s (type=%s)\n", e.Id, e.Type)
+			return nil
+		},
+	}
+}
+
+func denyCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "deny <entity-id>",
+		Short: "Deny a pending intercept action",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			client, cleanup, err := dial()
+			if err != nil {
+				return err
+			}
+			defer cleanup()
+
+			e, err := client.DenyAction(context.Background(), &storev1.DenyActionRequest{
+				EntityId: args[0],
+			})
+			if err != nil {
+				return fmt.Errorf("deny %s: %w", args[0], err)
+			}
+
+			fmt.Printf("Denied: %s (type=%s)\n", e.Id, e.Type)
+			return nil
 		},
 	}
 }

@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"os"
 	"os/signal"
 	"strconv"
@@ -21,16 +21,30 @@ func main() {
 	if v := os.Getenv("INTERVAL"); v != "" {
 		d, err := time.ParseDuration(v)
 		if err != nil {
-			log.Fatalf("invalid INTERVAL %q: %v", v, err)
+			slog.Error("invalid INTERVAL", "value", v, "error", err)
+			os.Exit(1)
 		}
 		cfg.Interval = d
 	}
 	if v := os.Getenv("NUM_TRACKS"); v != "" {
 		n, err := strconv.Atoi(v)
 		if err != nil {
-			log.Fatalf("invalid NUM_TRACKS %q: %v", v, err)
+			slog.Error("invalid NUM_TRACKS", "value", v, "error", err)
+			os.Exit(1)
 		}
 		cfg.NumTracks = n
+	}
+	if v := os.Getenv("BBOX_MIN_LAT"); v != "" {
+		cfg.BBox.MinLat, _ = strconv.ParseFloat(v, 64)
+	}
+	if v := os.Getenv("BBOX_MAX_LAT"); v != "" {
+		cfg.BBox.MaxLat, _ = strconv.ParseFloat(v, 64)
+	}
+	if v := os.Getenv("BBOX_MIN_LON"); v != "" {
+		cfg.BBox.MinLon, _ = strconv.ParseFloat(v, 64)
+	}
+	if v := os.Getenv("BBOX_MAX_LON"); v != "" {
+		cfg.BBox.MaxLon, _ = strconv.ParseFloat(v, 64)
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -40,12 +54,13 @@ func main() {
 		sigCh := make(chan os.Signal, 1)
 		signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 		<-sigCh
-		log.Println("shutting down...")
+		slog.Info("shutting down")
 		cancel()
 	}()
 
 	sim := sensor.New(cfg)
 	if err := sim.Run(ctx); err != nil {
-		log.Fatalf("sensor-sim: %v", err)
+		slog.Error("sensor-sim failed", "error", err)
+		os.Exit(1)
 	}
 }

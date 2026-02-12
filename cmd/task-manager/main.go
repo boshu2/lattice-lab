@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
@@ -24,12 +24,13 @@ func main() {
 		sigCh := make(chan os.Signal, 1)
 		signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 		<-sigCh
-		log.Println("shutting down...")
+		slog.Info("shutting down")
 		cancel()
 	}()
 
 	mgr := task.New(cfg)
 	if err := mgr.Run(ctx); err != nil {
-		log.Fatalf("task-manager: %v", err)
+		slog.Error("task-manager failed", "error", err)
+		os.Exit(1)
 	}
 }

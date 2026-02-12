@@ -2,6 +2,8 @@ version: 1
 mission: "Mini Lattice in Go — learn distributed systems (gRPC, Protobuf, Entity-Component, microservices)"
 
 goals:
+  # --- Tier 1: Must never break ---
+
   - id: build-clean
     description: "All packages build without errors"
     check: "go build ./..."
@@ -9,7 +11,7 @@ goals:
 
   - id: tests-pass
     description: "All tests pass with race detector"
-    check: "go test -race ./..."
+    check: "go test -race -count=1 ./..."
     weight: 10
 
   - id: vet-clean
@@ -17,32 +19,53 @@ goals:
     check: "go vet ./..."
     weight: 9
 
-  - id: phase2-sensor-sim
-    description: "Phase 2: sensor-sim binary exists with simulator + tests"
-    check: "test -f internal/sensor/simulator.go && test -f internal/sensor/simulator_test.go && test -f cmd/sensor-sim/main.go && go test ./internal/sensor/"
+  # --- Tier 2: Code quality ---
+
+  - id: lint-clean
+    description: "golangci-lint passes (install latest if version mismatch)"
+    check: "golangci-lint run ./..."
     weight: 8
 
-  - id: phase3-classifier
-    description: "Phase 3: classifier service watches tracks and adds classification/threat components"
-    check: "test -f internal/classifier/classifier.go && test -f internal/classifier/classifier_test.go && test -f cmd/classifier/main.go && go test ./internal/classifier/"
+  - id: coverage-80
+    description: "All internal packages have >= 80% test coverage"
+    check: "go test -cover ./internal/... 2>&1 | grep 'coverage:' | sed 's/.*coverage: //' | sed 's/% .*//' | awk '{ if ($1+0 < 80.0) exit 1 }'"
     weight: 7
 
-  - id: phase4-task-manager
-    description: "Phase 4: task-manager with state machines for orchestration"
-    check: "test -f internal/task/manager.go && test -f internal/task/manager_test.go && test -f cmd/task-manager/main.go && go test ./internal/task/"
+  # --- Tier 3: Robustness ---
+
+  - id: graceful-shutdown
+    description: "All integration tests pass with short timeouts (proves context cancellation works)"
+    check: "go test -run Integration -timeout 30s ./internal/..."
     weight: 6
 
-  - id: phase5-lattice-cli
-    description: "Phase 5: CLI tool for operator interface (Cobra-based)"
-    check: "test -f cmd/lattice-cli/main.go && go build -o /dev/null ./cmd/lattice-cli/"
+  - id: mesh-bidirectional
+    description: "Mesh relay supports bidirectional replication (both nodes relay to each other)"
+    check: "go test -v -run TestRelayBidirectional ./internal/mesh/ 2>&1 | grep -q 'PASS: TestRelayBidirectional'"
     weight: 5
 
-  - id: phase6-mesh-relay
-    description: "Phase 6: P2P mesh relay with partition tolerance"
-    check: "test -f internal/mesh/relay.go && test -f internal/mesh/relay_test.go && go test ./internal/mesh/"
+  - id: cli-help
+    description: "lattice-cli --help exits 0 and shows subcommands"
+    check: "go run ./cmd/lattice-cli -- --help 2>&1 | grep -q 'list'"
     weight: 4
 
-  - id: phase7-k8s-deploy
-    description: "Phase 7: Kubernetes deployment manifests and Dockerfiles"
-    check: "test -f deploy/Dockerfile && test -f deploy/k8s/entity-store.yaml"
+  # --- Tier 4: Production readiness ---
+
+  - id: structured-logging
+    description: "Services use slog structured logging instead of log.Printf"
+    check: "grep -rn 'log\\.Printf\\|log\\.Fatalf\\|log\\.Println' internal/ cmd/ --include='*.go' | grep -v _test.go | grep -c . | grep -q '^0$'"
+    weight: 4
+
+  - id: ci-pipeline
+    description: "GitHub Actions CI runs build + test + lint on push"
+    check: "test -f .github/workflows/ci.yml && grep -q 'go test' .github/workflows/ci.yml"
     weight: 3
+
+  - id: configurable-bbox
+    description: "Sensor-sim bounding box is configurable via env vars (BBOX_MIN_LAT, etc)"
+    check: "grep -q 'BBOX_MIN_LAT\\|BBOX' cmd/sensor-sim/main.go"
+    weight: 2
+
+  - id: entity-ttl
+    description: "Entity store supports TTL-based expiration (stale tracks auto-delete)"
+    check: "go test -v -run TestTTL ./internal/store/ 2>&1 | grep -q 'PASS: TestTTL'"
+    weight: 2

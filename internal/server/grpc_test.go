@@ -28,7 +28,7 @@ func startTestServer(t *testing.T) (storev1.EntityStoreServiceClient, func()) {
 		t.Fatalf("listen: %v", err)
 	}
 
-	go srv.Serve(lis)
+	go srv.Serve(lis) //nolint:errcheck
 
 	conn, err := grpc.NewClient(lis.Addr().String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
@@ -87,10 +87,10 @@ func TestGRPCListEntities(t *testing.T) {
 	defer cleanup()
 
 	ctx := context.Background()
-	client.CreateEntity(ctx, &storev1.CreateEntityRequest{
+	_, _ = client.CreateEntity(ctx, &storev1.CreateEntityRequest{
 		Entity: &entityv1.Entity{Id: "a1", Type: entityv1.EntityType_ENTITY_TYPE_ASSET},
 	})
-	client.CreateEntity(ctx, &storev1.CreateEntityRequest{
+	_, _ = client.CreateEntity(ctx, &storev1.CreateEntityRequest{
 		Entity: &entityv1.Entity{Id: "t1", Type: entityv1.EntityType_ENTITY_TYPE_TRACK},
 	})
 
@@ -118,7 +118,7 @@ func TestGRPCUpdateAndDelete(t *testing.T) {
 	defer cleanup()
 
 	ctx := context.Background()
-	client.CreateEntity(ctx, &storev1.CreateEntityRequest{
+	_, _ = client.CreateEntity(ctx, &storev1.CreateEntityRequest{
 		Entity: &entityv1.Entity{Id: "u1", Type: entityv1.EntityType_ENTITY_TYPE_GEO},
 	})
 
@@ -158,7 +158,7 @@ func TestGRPCWatchEntities(t *testing.T) {
 	// Create an entity in a goroutine so the watch can pick it up.
 	go func() {
 		time.Sleep(100 * time.Millisecond)
-		client.CreateEntity(context.Background(), &storev1.CreateEntityRequest{
+		_, _ = client.CreateEntity(context.Background(), &storev1.CreateEntityRequest{
 			Entity: &entityv1.Entity{Id: "w1", Type: entityv1.EntityType_ENTITY_TYPE_TRACK},
 		})
 	}()

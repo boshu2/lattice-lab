@@ -387,6 +387,7 @@ type EntityEvent struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Type          EventType              `protobuf:"varint,1,opt,name=type,proto3,enum=store.v1.EventType" json:"type,omitempty"`
 	Entity        *v1.Entity             `protobuf:"bytes,2,opt,name=entity,proto3" json:"entity,omitempty"`
+	OriginNode    string                 `protobuf:"bytes,3,opt,name=origin_node,json=originNode,proto3" json:"origin_node,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -435,6 +436,101 @@ func (x *EntityEvent) GetEntity() *v1.Entity {
 	return nil
 }
 
+func (x *EntityEvent) GetOriginNode() string {
+	if x != nil {
+		return x.OriginNode
+	}
+	return ""
+}
+
+type ApproveActionRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	EntityId      string                 `protobuf:"bytes,1,opt,name=entity_id,json=entityId,proto3" json:"entity_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ApproveActionRequest) Reset() {
+	*x = ApproveActionRequest{}
+	mi := &file_store_v1_store_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ApproveActionRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ApproveActionRequest) ProtoMessage() {}
+
+func (x *ApproveActionRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_store_v1_store_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ApproveActionRequest.ProtoReflect.Descriptor instead.
+func (*ApproveActionRequest) Descriptor() ([]byte, []int) {
+	return file_store_v1_store_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *ApproveActionRequest) GetEntityId() string {
+	if x != nil {
+		return x.EntityId
+	}
+	return ""
+}
+
+type DenyActionRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	EntityId      string                 `protobuf:"bytes,1,opt,name=entity_id,json=entityId,proto3" json:"entity_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DenyActionRequest) Reset() {
+	*x = DenyActionRequest{}
+	mi := &file_store_v1_store_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DenyActionRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DenyActionRequest) ProtoMessage() {}
+
+func (x *DenyActionRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_store_v1_store_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DenyActionRequest.ProtoReflect.Descriptor instead.
+func (*DenyActionRequest) Descriptor() ([]byte, []int) {
+	return file_store_v1_store_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *DenyActionRequest) GetEntityId() string {
+	if x != nil {
+		return x.EntityId
+	}
+	return ""
+}
+
 var File_store_v1_store_proto protoreflect.FileDescriptor
 
 const file_store_v1_store_proto_rawDesc = "" +
@@ -455,22 +551,31 @@ const file_store_v1_store_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"N\n" +
 	"\x14WatchEntitiesRequest\x126\n" +
 	"\vtype_filter\x18\x01 \x01(\x0e2\x15.entity.v1.EntityTypeR\n" +
-	"typeFilter\"a\n" +
+	"typeFilter\"\x82\x01\n" +
 	"\vEntityEvent\x12'\n" +
 	"\x04type\x18\x01 \x01(\x0e2\x13.store.v1.EventTypeR\x04type\x12)\n" +
-	"\x06entity\x18\x02 \x01(\v2\x11.entity.v1.EntityR\x06entity*o\n" +
+	"\x06entity\x18\x02 \x01(\v2\x11.entity.v1.EntityR\x06entity\x12\x1f\n" +
+	"\vorigin_node\x18\x03 \x01(\tR\n" +
+	"originNode\"3\n" +
+	"\x14ApproveActionRequest\x12\x1b\n" +
+	"\tentity_id\x18\x01 \x01(\tR\bentityId\"0\n" +
+	"\x11DenyActionRequest\x12\x1b\n" +
+	"\tentity_id\x18\x01 \x01(\tR\bentityId*o\n" +
 	"\tEventType\x12\x1a\n" +
 	"\x16EVENT_TYPE_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12EVENT_TYPE_CREATED\x10\x01\x12\x16\n" +
 	"\x12EVENT_TYPE_UPDATED\x10\x02\x12\x16\n" +
-	"\x12EVENT_TYPE_DELETED\x10\x032\xb4\x03\n" +
+	"\x12EVENT_TYPE_DELETED\x10\x032\xb6\x04\n" +
 	"\x12EntityStoreService\x12@\n" +
 	"\fCreateEntity\x12\x1d.store.v1.CreateEntityRequest\x1a\x11.entity.v1.Entity\x12:\n" +
 	"\tGetEntity\x12\x1a.store.v1.GetEntityRequest\x1a\x11.entity.v1.Entity\x12M\n" +
 	"\fListEntities\x12\x1d.store.v1.ListEntitiesRequest\x1a\x1e.store.v1.ListEntitiesResponse\x12@\n" +
 	"\fUpdateEntity\x12\x1d.store.v1.UpdateEntityRequest\x1a\x11.entity.v1.Entity\x12E\n" +
 	"\fDeleteEntity\x12\x1d.store.v1.DeleteEntityRequest\x1a\x16.google.protobuf.Empty\x12H\n" +
-	"\rWatchEntities\x12\x1e.store.v1.WatchEntitiesRequest\x1a\x15.store.v1.EntityEvent0\x01B4Z2github.com/boshu2/lattice-lab/gen/store/v1;storev1b\x06proto3"
+	"\rWatchEntities\x12\x1e.store.v1.WatchEntitiesRequest\x1a\x15.store.v1.EntityEvent0\x01\x12B\n" +
+	"\rApproveAction\x12\x1e.store.v1.ApproveActionRequest\x1a\x11.entity.v1.Entity\x12<\n" +
+	"\n" +
+	"DenyAction\x12\x1b.store.v1.DenyActionRequest\x1a\x11.entity.v1.EntityB4Z2github.com/boshu2/lattice-lab/gen/store/v1;storev1b\x06proto3"
 
 var (
 	file_store_v1_store_proto_rawDescOnce sync.Once
@@ -485,7 +590,7 @@ func file_store_v1_store_proto_rawDescGZIP() []byte {
 }
 
 var file_store_v1_store_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_store_v1_store_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_store_v1_store_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_store_v1_store_proto_goTypes = []any{
 	(EventType)(0),               // 0: store.v1.EventType
 	(*CreateEntityRequest)(nil),  // 1: store.v1.CreateEntityRequest
@@ -496,32 +601,38 @@ var file_store_v1_store_proto_goTypes = []any{
 	(*DeleteEntityRequest)(nil),  // 6: store.v1.DeleteEntityRequest
 	(*WatchEntitiesRequest)(nil), // 7: store.v1.WatchEntitiesRequest
 	(*EntityEvent)(nil),          // 8: store.v1.EntityEvent
-	(*v1.Entity)(nil),            // 9: entity.v1.Entity
-	(v1.EntityType)(0),           // 10: entity.v1.EntityType
-	(*emptypb.Empty)(nil),        // 11: google.protobuf.Empty
+	(*ApproveActionRequest)(nil), // 9: store.v1.ApproveActionRequest
+	(*DenyActionRequest)(nil),    // 10: store.v1.DenyActionRequest
+	(*v1.Entity)(nil),            // 11: entity.v1.Entity
+	(v1.EntityType)(0),           // 12: entity.v1.EntityType
+	(*emptypb.Empty)(nil),        // 13: google.protobuf.Empty
 }
 var file_store_v1_store_proto_depIdxs = []int32{
-	9,  // 0: store.v1.CreateEntityRequest.entity:type_name -> entity.v1.Entity
-	10, // 1: store.v1.ListEntitiesRequest.type_filter:type_name -> entity.v1.EntityType
-	9,  // 2: store.v1.ListEntitiesResponse.entities:type_name -> entity.v1.Entity
-	9,  // 3: store.v1.UpdateEntityRequest.entity:type_name -> entity.v1.Entity
-	10, // 4: store.v1.WatchEntitiesRequest.type_filter:type_name -> entity.v1.EntityType
+	11, // 0: store.v1.CreateEntityRequest.entity:type_name -> entity.v1.Entity
+	12, // 1: store.v1.ListEntitiesRequest.type_filter:type_name -> entity.v1.EntityType
+	11, // 2: store.v1.ListEntitiesResponse.entities:type_name -> entity.v1.Entity
+	11, // 3: store.v1.UpdateEntityRequest.entity:type_name -> entity.v1.Entity
+	12, // 4: store.v1.WatchEntitiesRequest.type_filter:type_name -> entity.v1.EntityType
 	0,  // 5: store.v1.EntityEvent.type:type_name -> store.v1.EventType
-	9,  // 6: store.v1.EntityEvent.entity:type_name -> entity.v1.Entity
+	11, // 6: store.v1.EntityEvent.entity:type_name -> entity.v1.Entity
 	1,  // 7: store.v1.EntityStoreService.CreateEntity:input_type -> store.v1.CreateEntityRequest
 	2,  // 8: store.v1.EntityStoreService.GetEntity:input_type -> store.v1.GetEntityRequest
 	3,  // 9: store.v1.EntityStoreService.ListEntities:input_type -> store.v1.ListEntitiesRequest
 	5,  // 10: store.v1.EntityStoreService.UpdateEntity:input_type -> store.v1.UpdateEntityRequest
 	6,  // 11: store.v1.EntityStoreService.DeleteEntity:input_type -> store.v1.DeleteEntityRequest
 	7,  // 12: store.v1.EntityStoreService.WatchEntities:input_type -> store.v1.WatchEntitiesRequest
-	9,  // 13: store.v1.EntityStoreService.CreateEntity:output_type -> entity.v1.Entity
-	9,  // 14: store.v1.EntityStoreService.GetEntity:output_type -> entity.v1.Entity
-	4,  // 15: store.v1.EntityStoreService.ListEntities:output_type -> store.v1.ListEntitiesResponse
-	9,  // 16: store.v1.EntityStoreService.UpdateEntity:output_type -> entity.v1.Entity
-	11, // 17: store.v1.EntityStoreService.DeleteEntity:output_type -> google.protobuf.Empty
-	8,  // 18: store.v1.EntityStoreService.WatchEntities:output_type -> store.v1.EntityEvent
-	13, // [13:19] is the sub-list for method output_type
-	7,  // [7:13] is the sub-list for method input_type
+	9,  // 13: store.v1.EntityStoreService.ApproveAction:input_type -> store.v1.ApproveActionRequest
+	10, // 14: store.v1.EntityStoreService.DenyAction:input_type -> store.v1.DenyActionRequest
+	11, // 15: store.v1.EntityStoreService.CreateEntity:output_type -> entity.v1.Entity
+	11, // 16: store.v1.EntityStoreService.GetEntity:output_type -> entity.v1.Entity
+	4,  // 17: store.v1.EntityStoreService.ListEntities:output_type -> store.v1.ListEntitiesResponse
+	11, // 18: store.v1.EntityStoreService.UpdateEntity:output_type -> entity.v1.Entity
+	13, // 19: store.v1.EntityStoreService.DeleteEntity:output_type -> google.protobuf.Empty
+	8,  // 20: store.v1.EntityStoreService.WatchEntities:output_type -> store.v1.EntityEvent
+	11, // 21: store.v1.EntityStoreService.ApproveAction:output_type -> entity.v1.Entity
+	11, // 22: store.v1.EntityStoreService.DenyAction:output_type -> entity.v1.Entity
+	15, // [15:23] is the sub-list for method output_type
+	7,  // [7:15] is the sub-list for method input_type
 	7,  // [7:7] is the sub-list for extension type_name
 	7,  // [7:7] is the sub-list for extension extendee
 	0,  // [0:7] is the sub-list for field type_name
@@ -538,7 +649,7 @@ func file_store_v1_store_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_store_v1_store_proto_rawDesc), len(file_store_v1_store_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   8,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

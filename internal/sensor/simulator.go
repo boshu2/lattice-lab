@@ -3,7 +3,7 @@ package sensor
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"math"
 	"math/rand/v2"
 	"time"
@@ -95,7 +95,7 @@ func (s *Simulator) Run(ctx context.Context) error {
 	ticker := time.NewTicker(s.cfg.Interval)
 	defer ticker.Stop()
 
-	log.Printf("sensor-sim: %d tracks, interval=%s, store=%s", s.cfg.NumTracks, s.cfg.Interval, s.cfg.StoreAddr)
+	slog.Info("sensor-sim started", "num_tracks", s.cfg.NumTracks, "interval", s.cfg.Interval, "store_addr", s.cfg.StoreAddr)
 
 	for {
 		select {
@@ -104,7 +104,7 @@ func (s *Simulator) Run(ctx context.Context) error {
 		case <-ticker.C:
 			for _, t := range s.tracks {
 				if err := s.tick(ctx, client, t); err != nil {
-					log.Printf("tick %s: %v", t.id, err)
+					slog.Error("tick failed", "track_id", t.id, "error", err)
 				}
 			}
 		}
@@ -128,8 +128,7 @@ func (s *Simulator) createTrack(ctx context.Context, client storev1.EntityStoreS
 		return fmt.Errorf("create %s: %w", t.id, err)
 	}
 	t.created = true
-	log.Printf("created %s at (%.4f, %.4f) speed=%.0f kts hdg=%.0f°",
-		t.id, t.lat, t.lon, t.speed/knotsToMps, t.heading)
+	slog.Info("created track", "track_id", t.id, "lat", t.lat, "lon", t.lon, "speed_kts", t.speed/knotsToMps, "heading_deg", t.heading)
 	return nil
 }
 
@@ -141,8 +140,7 @@ func (s *Simulator) updateTrack(ctx context.Context, client storev1.EntityStoreS
 	if _, err := client.UpdateEntity(ctx, &storev1.UpdateEntityRequest{Entity: entity}); err != nil {
 		return fmt.Errorf("update %s: %w", t.id, err)
 	}
-	log.Printf("updated %s at (%.4f, %.4f) speed=%.0f kts hdg=%.0f°",
-		t.id, t.lat, t.lon, t.speed/knotsToMps, t.heading)
+	slog.Info("updated track", "track_id", t.id, "lat", t.lat, "lon", t.lon, "speed_kts", t.speed/knotsToMps, "heading_deg", t.heading)
 	return nil
 }
 
@@ -164,12 +162,21 @@ func buildEntity(t *track) (*entityv1.Entity, error) {
 		return nil, fmt.Errorf("pack velocity: %w", err)
 	}
 
+	src, err := anypb.New(&entityv1.SourceComponent{
+		SensorId:   "eo-1",
+		SensorType: "eo",
+	})
+	if err != nil {
+		return nil, fmt.Errorf("pack source: %w", err)
+	}
+
 	return &entityv1.Entity{
 		Id:   t.id,
 		Type: entityv1.EntityType_ENTITY_TYPE_TRACK,
 		Components: map[string]*anypb.Any{
 			"position": pos,
 			"velocity": vel,
+			"source":   src,
 		},
 	}, nil
 }

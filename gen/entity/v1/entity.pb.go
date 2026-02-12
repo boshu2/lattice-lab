@@ -130,6 +130,64 @@ func (ThreatLevel) EnumDescriptor() ([]byte, []int) {
 	return file_entity_v1_entity_proto_rawDescGZIP(), []int{1}
 }
 
+type ApprovalState int32
+
+const (
+	ApprovalState_APPROVAL_STATE_UNSPECIFIED   ApprovalState = 0
+	ApprovalState_APPROVAL_STATE_AUTO_APPROVED ApprovalState = 1
+	ApprovalState_APPROVAL_STATE_PENDING       ApprovalState = 2
+	ApprovalState_APPROVAL_STATE_APPROVED      ApprovalState = 3
+	ApprovalState_APPROVAL_STATE_DENIED        ApprovalState = 4
+	ApprovalState_APPROVAL_STATE_TIMED_OUT     ApprovalState = 5
+)
+
+// Enum value maps for ApprovalState.
+var (
+	ApprovalState_name = map[int32]string{
+		0: "APPROVAL_STATE_UNSPECIFIED",
+		1: "APPROVAL_STATE_AUTO_APPROVED",
+		2: "APPROVAL_STATE_PENDING",
+		3: "APPROVAL_STATE_APPROVED",
+		4: "APPROVAL_STATE_DENIED",
+		5: "APPROVAL_STATE_TIMED_OUT",
+	}
+	ApprovalState_value = map[string]int32{
+		"APPROVAL_STATE_UNSPECIFIED":   0,
+		"APPROVAL_STATE_AUTO_APPROVED": 1,
+		"APPROVAL_STATE_PENDING":       2,
+		"APPROVAL_STATE_APPROVED":      3,
+		"APPROVAL_STATE_DENIED":        4,
+		"APPROVAL_STATE_TIMED_OUT":     5,
+	}
+)
+
+func (x ApprovalState) Enum() *ApprovalState {
+	p := new(ApprovalState)
+	*p = x
+	return p
+}
+
+func (x ApprovalState) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ApprovalState) Descriptor() protoreflect.EnumDescriptor {
+	return file_entity_v1_entity_proto_enumTypes[2].Descriptor()
+}
+
+func (ApprovalState) Type() protoreflect.EnumType {
+	return &file_entity_v1_entity_proto_enumTypes[2]
+}
+
+func (x ApprovalState) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ApprovalState.Descriptor instead.
+func (ApprovalState) EnumDescriptor() ([]byte, []int) {
+	return file_entity_v1_entity_proto_rawDescGZIP(), []int{2}
+}
+
 type Entity struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -137,6 +195,9 @@ type Entity struct {
 	Components    map[string]*anypb.Any  `protobuf:"bytes,3,rep,name=components,proto3" json:"components,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	HlcPhysical   uint64                 `protobuf:"varint,6,opt,name=hlc_physical,json=hlcPhysical,proto3" json:"hlc_physical,omitempty"`
+	HlcLogical    uint32                 `protobuf:"varint,7,opt,name=hlc_logical,json=hlcLogical,proto3" json:"hlc_logical,omitempty"`
+	HlcNode       string                 `protobuf:"bytes,8,opt,name=hlc_node,json=hlcNode,proto3" json:"hlc_node,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -204,6 +265,27 @@ func (x *Entity) GetUpdatedAt() *timestamppb.Timestamp {
 		return x.UpdatedAt
 	}
 	return nil
+}
+
+func (x *Entity) GetHlcPhysical() uint64 {
+	if x != nil {
+		return x.HlcPhysical
+	}
+	return 0
+}
+
+func (x *Entity) GetHlcLogical() uint32 {
+	if x != nil {
+		return x.HlcLogical
+	}
+	return 0
+}
+
+func (x *Entity) GetHlcNode() string {
+	if x != nil {
+		return x.HlcNode
+	}
+	return ""
 }
 
 type PositionComponent struct {
@@ -458,11 +540,191 @@ func (x *ThreatComponent) GetLevel() ThreatLevel {
 	return ThreatLevel_THREAT_LEVEL_UNSPECIFIED
 }
 
+type ApprovalComponent struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	State          ApprovalState          `protobuf:"varint,1,opt,name=state,proto3,enum=entity.v1.ApprovalState" json:"state,omitempty"`
+	TimeoutSeconds int64                  `protobuf:"varint,2,opt,name=timeout_seconds,json=timeoutSeconds,proto3" json:"timeout_seconds,omitempty"`
+	RequestedAt    *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=requested_at,json=requestedAt,proto3" json:"requested_at,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *ApprovalComponent) Reset() {
+	*x = ApprovalComponent{}
+	mi := &file_entity_v1_entity_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ApprovalComponent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ApprovalComponent) ProtoMessage() {}
+
+func (x *ApprovalComponent) ProtoReflect() protoreflect.Message {
+	mi := &file_entity_v1_entity_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ApprovalComponent.ProtoReflect.Descriptor instead.
+func (*ApprovalComponent) Descriptor() ([]byte, []int) {
+	return file_entity_v1_entity_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *ApprovalComponent) GetState() ApprovalState {
+	if x != nil {
+		return x.State
+	}
+	return ApprovalState_APPROVAL_STATE_UNSPECIFIED
+}
+
+func (x *ApprovalComponent) GetTimeoutSeconds() int64 {
+	if x != nil {
+		return x.TimeoutSeconds
+	}
+	return 0
+}
+
+func (x *ApprovalComponent) GetRequestedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.RequestedAt
+	}
+	return nil
+}
+
+type FusionComponent struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	SourceIds     []string               `protobuf:"bytes,1,rep,name=source_ids,json=sourceIds,proto3" json:"source_ids,omitempty"`
+	FusedLat      float64                `protobuf:"fixed64,2,opt,name=fused_lat,json=fusedLat,proto3" json:"fused_lat,omitempty"`
+	FusedLon      float64                `protobuf:"fixed64,3,opt,name=fused_lon,json=fusedLon,proto3" json:"fused_lon,omitempty"`
+	Confidence    float32                `protobuf:"fixed32,4,opt,name=confidence,proto3" json:"confidence,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FusionComponent) Reset() {
+	*x = FusionComponent{}
+	mi := &file_entity_v1_entity_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FusionComponent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FusionComponent) ProtoMessage() {}
+
+func (x *FusionComponent) ProtoReflect() protoreflect.Message {
+	mi := &file_entity_v1_entity_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FusionComponent.ProtoReflect.Descriptor instead.
+func (*FusionComponent) Descriptor() ([]byte, []int) {
+	return file_entity_v1_entity_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *FusionComponent) GetSourceIds() []string {
+	if x != nil {
+		return x.SourceIds
+	}
+	return nil
+}
+
+func (x *FusionComponent) GetFusedLat() float64 {
+	if x != nil {
+		return x.FusedLat
+	}
+	return 0
+}
+
+func (x *FusionComponent) GetFusedLon() float64 {
+	if x != nil {
+		return x.FusedLon
+	}
+	return 0
+}
+
+func (x *FusionComponent) GetConfidence() float32 {
+	if x != nil {
+		return x.Confidence
+	}
+	return 0
+}
+
+type SourceComponent struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	SensorId      string                 `protobuf:"bytes,1,opt,name=sensor_id,json=sensorId,proto3" json:"sensor_id,omitempty"`
+	SensorType    string                 `protobuf:"bytes,2,opt,name=sensor_type,json=sensorType,proto3" json:"sensor_type,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SourceComponent) Reset() {
+	*x = SourceComponent{}
+	mi := &file_entity_v1_entity_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SourceComponent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SourceComponent) ProtoMessage() {}
+
+func (x *SourceComponent) ProtoReflect() protoreflect.Message {
+	mi := &file_entity_v1_entity_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SourceComponent.ProtoReflect.Descriptor instead.
+func (*SourceComponent) Descriptor() ([]byte, []int) {
+	return file_entity_v1_entity_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *SourceComponent) GetSensorId() string {
+	if x != nil {
+		return x.SensorId
+	}
+	return ""
+}
+
+func (x *SourceComponent) GetSensorType() string {
+	if x != nil {
+		return x.SensorType
+	}
+	return ""
+}
+
 var File_entity_v1_entity_proto protoreflect.FileDescriptor
 
 const file_entity_v1_entity_proto_rawDesc = "" +
 	"\n" +
-	"\x16entity/v1/entity.proto\x12\tentity.v1\x1a\x19google/protobuf/any.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xd1\x02\n" +
+	"\x16entity/v1/entity.proto\x12\tentity.v1\x1a\x19google/protobuf/any.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xb0\x03\n" +
 	"\x06Entity\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12)\n" +
 	"\x04type\x18\x02 \x01(\x0e2\x15.entity.v1.EntityTypeR\x04type\x12A\n" +
@@ -472,7 +734,11 @@ const file_entity_v1_entity_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
-	"updated_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x1aS\n" +
+	"updated_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x12!\n" +
+	"\fhlc_physical\x18\x06 \x01(\x04R\vhlcPhysical\x12\x1f\n" +
+	"\vhlc_logical\x18\a \x01(\rR\n" +
+	"hlcLogical\x12\x19\n" +
+	"\bhlc_node\x18\b \x01(\tR\ahlcNode\x1aS\n" +
 	"\x0fComponentsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12*\n" +
 	"\x05value\x18\x02 \x01(\v2\x14.google.protobuf.AnyR\x05value:\x028\x01\"I\n" +
@@ -491,7 +757,23 @@ const file_entity_v1_entity_proto_rawDesc = "" +
 	"\x14TaskCatalogComponent\x12'\n" +
 	"\x0favailable_tasks\x18\x01 \x03(\tR\x0eavailableTasks\"?\n" +
 	"\x0fThreatComponent\x12,\n" +
-	"\x05level\x18\x01 \x01(\x0e2\x16.entity.v1.ThreatLevelR\x05level*l\n" +
+	"\x05level\x18\x01 \x01(\x0e2\x16.entity.v1.ThreatLevelR\x05level\"\xab\x01\n" +
+	"\x11ApprovalComponent\x12.\n" +
+	"\x05state\x18\x01 \x01(\x0e2\x18.entity.v1.ApprovalStateR\x05state\x12'\n" +
+	"\x0ftimeout_seconds\x18\x02 \x01(\x03R\x0etimeoutSeconds\x12=\n" +
+	"\frequested_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\vrequestedAt\"\x8a\x01\n" +
+	"\x0fFusionComponent\x12\x1d\n" +
+	"\n" +
+	"source_ids\x18\x01 \x03(\tR\tsourceIds\x12\x1b\n" +
+	"\tfused_lat\x18\x02 \x01(\x01R\bfusedLat\x12\x1b\n" +
+	"\tfused_lon\x18\x03 \x01(\x01R\bfusedLon\x12\x1e\n" +
+	"\n" +
+	"confidence\x18\x04 \x01(\x02R\n" +
+	"confidence\"O\n" +
+	"\x0fSourceComponent\x12\x1b\n" +
+	"\tsensor_id\x18\x01 \x01(\tR\bsensorId\x12\x1f\n" +
+	"\vsensor_type\x18\x02 \x01(\tR\n" +
+	"sensorType*l\n" +
 	"\n" +
 	"EntityType\x12\x1b\n" +
 	"\x17ENTITY_TYPE_UNSPECIFIED\x10\x00\x12\x15\n" +
@@ -503,7 +785,14 @@ const file_entity_v1_entity_proto_rawDesc = "" +
 	"\x11THREAT_LEVEL_NONE\x10\x01\x12\x14\n" +
 	"\x10THREAT_LEVEL_LOW\x10\x02\x12\x17\n" +
 	"\x13THREAT_LEVEL_MEDIUM\x10\x03\x12\x15\n" +
-	"\x11THREAT_LEVEL_HIGH\x10\x04B6Z4github.com/boshu2/lattice-lab/gen/entity/v1;entityv1b\x06proto3"
+	"\x11THREAT_LEVEL_HIGH\x10\x04*\xc3\x01\n" +
+	"\rApprovalState\x12\x1e\n" +
+	"\x1aAPPROVAL_STATE_UNSPECIFIED\x10\x00\x12 \n" +
+	"\x1cAPPROVAL_STATE_AUTO_APPROVED\x10\x01\x12\x1a\n" +
+	"\x16APPROVAL_STATE_PENDING\x10\x02\x12\x1b\n" +
+	"\x17APPROVAL_STATE_APPROVED\x10\x03\x12\x19\n" +
+	"\x15APPROVAL_STATE_DENIED\x10\x04\x12\x1c\n" +
+	"\x18APPROVAL_STATE_TIMED_OUT\x10\x05B6Z4github.com/boshu2/lattice-lab/gen/entity/v1;entityv1b\x06proto3"
 
 var (
 	file_entity_v1_entity_proto_rawDescOnce sync.Once
@@ -517,33 +806,39 @@ func file_entity_v1_entity_proto_rawDescGZIP() []byte {
 	return file_entity_v1_entity_proto_rawDescData
 }
 
-var file_entity_v1_entity_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_entity_v1_entity_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_entity_v1_entity_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
+var file_entity_v1_entity_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_entity_v1_entity_proto_goTypes = []any{
 	(EntityType)(0),                 // 0: entity.v1.EntityType
 	(ThreatLevel)(0),                // 1: entity.v1.ThreatLevel
-	(*Entity)(nil),                  // 2: entity.v1.Entity
-	(*PositionComponent)(nil),       // 3: entity.v1.PositionComponent
-	(*VelocityComponent)(nil),       // 4: entity.v1.VelocityComponent
-	(*ClassificationComponent)(nil), // 5: entity.v1.ClassificationComponent
-	(*TaskCatalogComponent)(nil),    // 6: entity.v1.TaskCatalogComponent
-	(*ThreatComponent)(nil),         // 7: entity.v1.ThreatComponent
-	nil,                             // 8: entity.v1.Entity.ComponentsEntry
-	(*timestamppb.Timestamp)(nil),   // 9: google.protobuf.Timestamp
-	(*anypb.Any)(nil),               // 10: google.protobuf.Any
+	(ApprovalState)(0),              // 2: entity.v1.ApprovalState
+	(*Entity)(nil),                  // 3: entity.v1.Entity
+	(*PositionComponent)(nil),       // 4: entity.v1.PositionComponent
+	(*VelocityComponent)(nil),       // 5: entity.v1.VelocityComponent
+	(*ClassificationComponent)(nil), // 6: entity.v1.ClassificationComponent
+	(*TaskCatalogComponent)(nil),    // 7: entity.v1.TaskCatalogComponent
+	(*ThreatComponent)(nil),         // 8: entity.v1.ThreatComponent
+	(*ApprovalComponent)(nil),       // 9: entity.v1.ApprovalComponent
+	(*FusionComponent)(nil),         // 10: entity.v1.FusionComponent
+	(*SourceComponent)(nil),         // 11: entity.v1.SourceComponent
+	nil,                             // 12: entity.v1.Entity.ComponentsEntry
+	(*timestamppb.Timestamp)(nil),   // 13: google.protobuf.Timestamp
+	(*anypb.Any)(nil),               // 14: google.protobuf.Any
 }
 var file_entity_v1_entity_proto_depIdxs = []int32{
 	0,  // 0: entity.v1.Entity.type:type_name -> entity.v1.EntityType
-	8,  // 1: entity.v1.Entity.components:type_name -> entity.v1.Entity.ComponentsEntry
-	9,  // 2: entity.v1.Entity.created_at:type_name -> google.protobuf.Timestamp
-	9,  // 3: entity.v1.Entity.updated_at:type_name -> google.protobuf.Timestamp
+	12, // 1: entity.v1.Entity.components:type_name -> entity.v1.Entity.ComponentsEntry
+	13, // 2: entity.v1.Entity.created_at:type_name -> google.protobuf.Timestamp
+	13, // 3: entity.v1.Entity.updated_at:type_name -> google.protobuf.Timestamp
 	1,  // 4: entity.v1.ThreatComponent.level:type_name -> entity.v1.ThreatLevel
-	10, // 5: entity.v1.Entity.ComponentsEntry.value:type_name -> google.protobuf.Any
-	6,  // [6:6] is the sub-list for method output_type
-	6,  // [6:6] is the sub-list for method input_type
-	6,  // [6:6] is the sub-list for extension type_name
-	6,  // [6:6] is the sub-list for extension extendee
-	0,  // [0:6] is the sub-list for field type_name
+	2,  // 5: entity.v1.ApprovalComponent.state:type_name -> entity.v1.ApprovalState
+	13, // 6: entity.v1.ApprovalComponent.requested_at:type_name -> google.protobuf.Timestamp
+	14, // 7: entity.v1.Entity.ComponentsEntry.value:type_name -> google.protobuf.Any
+	8,  // [8:8] is the sub-list for method output_type
+	8,  // [8:8] is the sub-list for method input_type
+	8,  // [8:8] is the sub-list for extension type_name
+	8,  // [8:8] is the sub-list for extension extendee
+	0,  // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_entity_v1_entity_proto_init() }
@@ -556,8 +851,8 @@ func file_entity_v1_entity_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_entity_v1_entity_proto_rawDesc), len(file_entity_v1_entity_proto_rawDesc)),
-			NumEnums:      2,
-			NumMessages:   7,
+			NumEnums:      3,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

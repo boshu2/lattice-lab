@@ -77,7 +77,7 @@ func startTestServer(t *testing.T) (string, func()) {
 		t.Fatalf("listen: %v", err)
 	}
 
-	go srv.Serve(lis)
+	go srv.Serve(lis) //nolint:errcheck
 
 	return lis.Addr().String(), func() { srv.Stop() }
 }
@@ -91,7 +91,7 @@ func TestClassifierIntegration(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	go cl.Run(ctx)
+	go cl.Run(ctx) //nolint:errcheck
 
 	// Give classifier time to connect and start watching.
 	time.Sleep(100 * time.Millisecond)
@@ -157,5 +157,76 @@ func TestClassifierIntegration(t *testing.T) {
 
 	if threatComp.Level != entityv1.ThreatLevel_THREAT_LEVEL_HIGH {
 		t.Fatalf("expected HIGH threat, got %v", threatComp.Level)
+	}
+}
+
+func TestClassifierSkipsDeleteEvents(t *testing.T) {
+	addr, cleanup := startTestServer(t)
+	defer cleanup()
+
+	cl := New(Config{StoreAddr: addr})
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	go cl.Run(ctx) //nolint:errcheck
+	time.Sleep(100 * time.Millisecond)
+
+	conn, _ := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	defer conn.Close()
+	client := storev1.NewEntityStoreServiceClient(conn)
+
+	vel, _ := anypb.New(&entityv1.VelocityComponent{Speed: 200, Heading: 45})
+	_, _ = client.CreateEntity(ctx, &storev1.CreateEntityRequest{
+		Entity: &entityv1.Entity{
+			Id:         "track-skip-del",
+			Type:       entityv1.EntityType_ENTITY_TYPE_TRACK,
+			Components: map[string]*anypb.Any{"velocity": vel},
+		},
+	})
+	time.Sleep(300 * time.Millisecond)
+
+	// Delete should not cause errors in classifier.
+	_, _ = client.DeleteEntity(ctx, &storev1.DeleteEntityRequest{Id: "track-skip-del"})
+	time.Sleep(200 * time.Millisecond)
+}
+
+func TestClassifierNoVelocitySkips(t *testing.T) {
+	addr, cleanup := startTestServer(t)
+	defer cleanup()
+
+	cl := New(Config{StoreAddr: addr})
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	go cl.Run(ctx) //nolint:errcheck
+	time.Sleep(100 * time.Millisecond)
+
+	conn, _ := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	defer conn.Close()
+	client := storev1.NewEntityStoreServiceClient(conn)
+
+	// Track without velocity — classifier should log error but not crash.
+	_, _ = client.CreateEntity(ctx, &storev1.CreateEntityRequest{
+		Entity: &entityv1.Entity{
+			Id:   "track-no-vel",
+			Type: entityv1.EntityType_ENTITY_TYPE_TRACK,
+		},
+	})
+	time.Sleep(300 * time.Millisecond)
+
+	// Entity should NOT have classification (no velocity to classify).
+	got, err := client.GetEntity(ctx, &storev1.GetEntityRequest{Id: "track-no-vel"})
+	if err != nil {
+		t.Fatalf("get: %v", err)
+	}
+	if _, ok := got.Components["classification"]; ok {
+		t.Fatal("expected no classification for entity without velocity")
+	}
+}
+
+func TestDefaultConfig(t *testing.T) {
+	cfg := DefaultConfig()
+	if cfg.StoreAddr != "localhost:50051" {
+		t.Fatalf("expected localhost:50051, got %s", cfg.StoreAddr)
 	}
 }

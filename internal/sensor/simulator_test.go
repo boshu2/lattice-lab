@@ -129,7 +129,7 @@ func startTestServer(t *testing.T) (string, func()) {
 		t.Fatalf("listen: %v", err)
 	}
 
-	go srv.Serve(lis)
+	go srv.Serve(lis) //nolint:errcheck
 
 	cleanup := func() {
 		srv.Stop()
@@ -154,7 +154,7 @@ func TestSimulatorIntegration(t *testing.T) {
 	defer cancel()
 
 	// Run simulator — it should create 2 tracks, then update them at least once.
-	sim.Run(ctx)
+	_ = sim.Run(ctx)
 
 	// Verify tracks were created in the store.
 	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))

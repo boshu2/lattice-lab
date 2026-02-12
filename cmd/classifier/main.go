@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
@@ -24,12 +24,13 @@ func main() {
 		sigCh := make(chan os.Signal, 1)
 		signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 		<-sigCh
-		log.Println("shutting down...")
+		slog.Info("shutting down")
 		cancel()
 	}()
 
 	cl := classifier.New(cfg)
 	if err := cl.Run(ctx); err != nil {
-		log.Fatalf("classifier: %v", err)
+		slog.Error("classifier failed", "error", err)
+		os.Exit(1)
 	}
 }

@@ -3,7 +3,7 @@ package classifier
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 
 	entityv1 "github.com/boshu2/lattice-lab/gen/entity/v1"
 	storev1 "github.com/boshu2/lattice-lab/gen/store/v1"
@@ -80,7 +80,7 @@ func (c *Classifier) Run(ctx context.Context) error {
 		return fmt.Errorf("watch entities: %w", err)
 	}
 
-	log.Printf("classifier: watching tracks on %s", c.cfg.StoreAddr)
+	slog.Info("classifier watching tracks", "store_addr", c.cfg.StoreAddr)
 
 	for {
 		event, err := stream.Recv()
@@ -96,7 +96,7 @@ func (c *Classifier) Run(ctx context.Context) error {
 		}
 
 		if err := c.classifyEntity(ctx, client, event.Entity); err != nil {
-			log.Printf("classify %s: %v", event.Entity.Id, err)
+			slog.Error("classify failed", "entity_id", event.Entity.Id, "error", err)
 		}
 	}
 }
@@ -131,8 +131,7 @@ func (c *Classifier) classifyEntity(ctx context.Context, client storev1.EntitySt
 		return fmt.Errorf("update %s: %w", entity.Id, err)
 	}
 
-	log.Printf("classified %s: %s (%.0f%% confidence, threat=%s) speed=%.0f kts",
-		entity.Id, cl.Label, cl.Confidence*100, cl.Threat, speed)
+	slog.Info("classified entity", "entity_id", entity.Id, "label", cl.Label, "confidence_pct", cl.Confidence*100, "threat", cl.Threat.String(), "speed_kts", speed)
 	return nil
 }
 

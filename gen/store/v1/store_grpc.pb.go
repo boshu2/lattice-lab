@@ -27,6 +27,8 @@ const (
 	EntityStoreService_UpdateEntity_FullMethodName  = "/store.v1.EntityStoreService/UpdateEntity"
 	EntityStoreService_DeleteEntity_FullMethodName  = "/store.v1.EntityStoreService/DeleteEntity"
 	EntityStoreService_WatchEntities_FullMethodName = "/store.v1.EntityStoreService/WatchEntities"
+	EntityStoreService_ApproveAction_FullMethodName = "/store.v1.EntityStoreService/ApproveAction"
+	EntityStoreService_DenyAction_FullMethodName    = "/store.v1.EntityStoreService/DenyAction"
 )
 
 // EntityStoreServiceClient is the client API for EntityStoreService service.
@@ -39,6 +41,8 @@ type EntityStoreServiceClient interface {
 	UpdateEntity(ctx context.Context, in *UpdateEntityRequest, opts ...grpc.CallOption) (*v1.Entity, error)
 	DeleteEntity(ctx context.Context, in *DeleteEntityRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	WatchEntities(ctx context.Context, in *WatchEntitiesRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[EntityEvent], error)
+	ApproveAction(ctx context.Context, in *ApproveActionRequest, opts ...grpc.CallOption) (*v1.Entity, error)
+	DenyAction(ctx context.Context, in *DenyActionRequest, opts ...grpc.CallOption) (*v1.Entity, error)
 }
 
 type entityStoreServiceClient struct {
@@ -118,6 +122,26 @@ func (c *entityStoreServiceClient) WatchEntities(ctx context.Context, in *WatchE
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type EntityStoreService_WatchEntitiesClient = grpc.ServerStreamingClient[EntityEvent]
 
+func (c *entityStoreServiceClient) ApproveAction(ctx context.Context, in *ApproveActionRequest, opts ...grpc.CallOption) (*v1.Entity, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.Entity)
+	err := c.cc.Invoke(ctx, EntityStoreService_ApproveAction_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *entityStoreServiceClient) DenyAction(ctx context.Context, in *DenyActionRequest, opts ...grpc.CallOption) (*v1.Entity, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.Entity)
+	err := c.cc.Invoke(ctx, EntityStoreService_DenyAction_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // EntityStoreServiceServer is the server API for EntityStoreService service.
 // All implementations must embed UnimplementedEntityStoreServiceServer
 // for forward compatibility.
@@ -128,6 +152,8 @@ type EntityStoreServiceServer interface {
 	UpdateEntity(context.Context, *UpdateEntityRequest) (*v1.Entity, error)
 	DeleteEntity(context.Context, *DeleteEntityRequest) (*emptypb.Empty, error)
 	WatchEntities(*WatchEntitiesRequest, grpc.ServerStreamingServer[EntityEvent]) error
+	ApproveAction(context.Context, *ApproveActionRequest) (*v1.Entity, error)
+	DenyAction(context.Context, *DenyActionRequest) (*v1.Entity, error)
 	mustEmbedUnimplementedEntityStoreServiceServer()
 }
 
@@ -155,6 +181,12 @@ func (UnimplementedEntityStoreServiceServer) DeleteEntity(context.Context, *Dele
 }
 func (UnimplementedEntityStoreServiceServer) WatchEntities(*WatchEntitiesRequest, grpc.ServerStreamingServer[EntityEvent]) error {
 	return status.Error(codes.Unimplemented, "method WatchEntities not implemented")
+}
+func (UnimplementedEntityStoreServiceServer) ApproveAction(context.Context, *ApproveActionRequest) (*v1.Entity, error) {
+	return nil, status.Error(codes.Unimplemented, "method ApproveAction not implemented")
+}
+func (UnimplementedEntityStoreServiceServer) DenyAction(context.Context, *DenyActionRequest) (*v1.Entity, error) {
+	return nil, status.Error(codes.Unimplemented, "method DenyAction not implemented")
 }
 func (UnimplementedEntityStoreServiceServer) mustEmbedUnimplementedEntityStoreServiceServer() {}
 func (UnimplementedEntityStoreServiceServer) testEmbeddedByValue()                            {}
@@ -278,6 +310,42 @@ func _EntityStoreService_WatchEntities_Handler(srv interface{}, stream grpc.Serv
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type EntityStoreService_WatchEntitiesServer = grpc.ServerStreamingServer[EntityEvent]
 
+func _EntityStoreService_ApproveAction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ApproveActionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EntityStoreServiceServer).ApproveAction(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: EntityStoreService_ApproveAction_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EntityStoreServiceServer).ApproveAction(ctx, req.(*ApproveActionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _EntityStoreService_DenyAction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DenyActionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EntityStoreServiceServer).DenyAction(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: EntityStoreService_DenyAction_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EntityStoreServiceServer).DenyAction(ctx, req.(*DenyActionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // EntityStoreService_ServiceDesc is the grpc.ServiceDesc for EntityStoreService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -304,6 +372,14 @@ var EntityStoreService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteEntity",
 			Handler:    _EntityStoreService_DeleteEntity_Handler,
+		},
+		{
+			MethodName: "ApproveAction",
+			Handler:    _EntityStoreService_ApproveAction_Handler,
+		},
+		{
+			MethodName: "DenyAction",
+			Handler:    _EntityStoreService_DenyAction_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

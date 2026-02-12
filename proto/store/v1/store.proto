@@ -14,6 +14,8 @@ service EntityStoreService {
   rpc UpdateEntity(UpdateEntityRequest) returns (entity.v1.Entity);
   rpc DeleteEntity(DeleteEntityRequest) returns (google.protobuf.Empty);
   rpc WatchEntities(WatchEntitiesRequest) returns (stream EntityEvent);
+  rpc ApproveAction(ApproveActionRequest) returns (entity.v1.Entity);
+  rpc DenyAction(DenyActionRequest) returns (entity.v1.Entity);
 }
 
 message CreateEntityRequest {
@@ -54,4 +56,13 @@ enum EventType {
 message EntityEvent {
   EventType type = 1;
   entity.v1.Entity entity = 2;
+  string origin_node = 3;
+}
+
+message ApproveActionRequest {
+  string entity_id = 1;
+}
+
+message DenyActionRequest {
+  string entity_id = 1;
 }

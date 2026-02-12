@@ -1,12 +1,17 @@
 package store
 
 import (
+	"context"
 	"fmt"
+	"math/rand"
 	"sync"
+	"time"
 
 	entityv1 "github.com/boshu2/lattice-lab/gen/entity/v1"
 	storev1 "github.com/boshu2/lattice-lab/gen/store/v1"
+	"github.com/boshu2/lattice-lab/internal/hlc"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -20,15 +25,78 @@ type Watcher struct {
 type Store struct {
 	mu       sync.RWMutex
 	entities map[string]*entityv1.Entity
+	ttls     map[string]time.Time // entity ID → expiry time
+	clock    *hlc.Clock
 
 	watchMu  sync.RWMutex
 	watchers []*Watcher
 }
 
-// New creates an empty entity store.
-func New() *Store {
-	return &Store{
+// Option configures a Store.
+type Option func(*Store)
+
+// WithNodeID sets the HLC node identifier for this store instance.
+func WithNodeID(id string) Option {
+	return func(s *Store) { s.clock = hlc.NewClock(id) }
+}
+
+// New creates an empty entity store. Options can configure the HLC node ID;
+// if none is provided a random node ID is generated.
+func New(opts ...Option) *Store {
+	s := &Store{
 		entities: make(map[string]*entityv1.Entity),
+		ttls:     make(map[string]time.Time),
+	}
+	for _, opt := range opts {
+		opt(s)
+	}
+	if s.clock == nil {
+		s.clock = hlc.NewClock(fmt.Sprintf("node-%d", rand.Int63()))
+	}
+	return s
+}
+
+// SetTTL sets a time-to-live for an entity. The entity will be automatically
+// deleted after the TTL expires (requires StartReaper to be running).
+func (s *Store) SetTTL(id string, ttl time.Duration) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.ttls[id] = time.Now().Add(ttl)
+}
+
+// StartReaper runs a background goroutine that deletes expired entities.
+// It stops when ctx is cancelled.
+func (s *Store) StartReaper(ctx context.Context, interval time.Duration) {
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			s.reap()
+		}
+	}
+}
+
+func (s *Store) reap() {
+	now := time.Now()
+
+	s.mu.Lock()
+	var expired []string
+	for id, expiry := range s.ttls {
+		if now.After(expiry) {
+			expired = append(expired, id)
+		}
+	}
+	s.mu.Unlock()
+
+	for _, id := range expired {
+		s.Delete(id) //nolint:errcheck
+		s.mu.Lock()
+		delete(s.ttls, id)
+		s.mu.Unlock()
 	}
 }
 
@@ -42,9 +110,13 @@ func (s *Store) Create(e *entityv1.Entity) (*entityv1.Entity, error) {
 	}
 
 	now := timestamppb.Now()
+	ts := s.clock.Now()
 	stored := proto.Clone(e).(*entityv1.Entity)
 	stored.CreatedAt = now
 	stored.UpdatedAt = now
+	stored.HlcPhysical = ts.Physical
+	stored.HlcLogical = ts.Logical
+	stored.HlcNode = ts.Node
 	s.entities[stored.Id] = stored
 
 	s.notify(&storev1.EntityEvent{
@@ -91,16 +163,42 @@ func (s *Store) Update(e *entityv1.Entity) (*entityv1.Entity, error) {
 		return nil, fmt.Errorf("entity %q not found", e.Id)
 	}
 
-	stored := proto.Clone(e).(*entityv1.Entity)
-	stored.CreatedAt = existing.CreatedAt
-	stored.UpdatedAt = timestamppb.Now()
-	s.entities[stored.Id] = stored
+	// Advance the store's HLC.
+	ts := s.clock.Now()
+
+	// Component-key merge: start from existing entity, merge incoming components.
+	merged := proto.Clone(existing).(*entityv1.Entity)
+
+	incomingHLC := hlc.Timestamp{Physical: e.HlcPhysical, Logical: e.HlcLogical, Node: e.HlcNode}
+	existingHLC := hlc.Timestamp{Physical: existing.HlcPhysical, Logical: existing.HlcLogical, Node: existing.HlcNode}
+
+	if merged.Components == nil {
+		merged.Components = make(map[string]*anypb.Any)
+	}
+	for key, comp := range e.Components {
+		if _, exists := merged.Components[key]; !exists {
+			// New key from incoming — always accept.
+			merged.Components[key] = comp
+		} else if hlc.Compare(incomingHLC, existingHLC) >= 0 {
+			// Same key, incoming is newer or equal — accept.
+			merged.Components[key] = comp
+		}
+		// Else: same key, incoming is stale — keep existing.
+	}
+
+	// Copy non-component fields from incoming where appropriate.
+	merged.Type = e.Type
+	merged.UpdatedAt = timestamppb.Now()
+	merged.HlcPhysical = ts.Physical
+	merged.HlcLogical = ts.Logical
+	merged.HlcNode = ts.Node
+	s.entities[merged.Id] = merged
 
 	s.notify(&storev1.EntityEvent{
 		Type:   storev1.EventType_EVENT_TYPE_UPDATED,
-		Entity: proto.Clone(stored).(*entityv1.Entity),
+		Entity: proto.Clone(merged).(*entityv1.Entity),
 	})
-	return proto.Clone(stored).(*entityv1.Entity), nil
+	return proto.Clone(merged).(*entityv1.Entity), nil
 }
 
 // Delete removes an entity by ID. Returns error if not found.

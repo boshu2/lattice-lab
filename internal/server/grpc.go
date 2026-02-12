@@ -70,6 +70,14 @@ func (s *Server) DeleteEntity(_ context.Context, req *storev1.DeleteEntityReques
 	return &emptypb.Empty{}, nil
 }
 
+func (s *Server) ApproveAction(_ context.Context, req *storev1.ApproveActionRequest) (*entityv1.Entity, error) {
+	return nil, status.Error(codes.Unimplemented, "approval gate not wired to this server instance")
+}
+
+func (s *Server) DenyAction(_ context.Context, req *storev1.DenyActionRequest) (*entityv1.Entity, error) {
+	return nil, status.Error(codes.Unimplemented, "approval gate not wired to this server instance")
+}
+
 func (s *Server) WatchEntities(req *storev1.WatchEntitiesRequest, stream grpc.ServerStreamingServer[storev1.EntityEvent]) error {
 	w := s.store.Watch(req.TypeFilter)
 	defer s.store.Unwatch(w)
