@@ -1,3 +1,11 @@
+---
+id: plan-2026-02-12-sensor-sim
+type: plan
+date: '2026-02-12'
+rig: lattice-lab
+epic: Sensor Simulator
+---
+
 # Plan: Phase 2 — Sensor Simulator
 
 **Epic:** Sensor Simulator

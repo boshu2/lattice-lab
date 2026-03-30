@@ -1,3 +1,10 @@
+---
+id: handoff-2026-02-12-lattice-lab-phase1-prompt
+type: handoff
+date: '2026-02-12'
+rig: lattice-lab
+---
+
 # Continuation Prompt for lattice-lab
 
 Copy/paste this to start the next session:

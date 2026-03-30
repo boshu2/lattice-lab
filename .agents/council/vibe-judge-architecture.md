@@ -1,3 +1,10 @@
+---
+id: council-2026-02-12-vibe-judge-architecture
+type: council
+date: '2026-02-12'
+rig: lattice-lab
+---
+
 # Vibe Judge: Architecture & Design
 
 **Verdict:** PASS

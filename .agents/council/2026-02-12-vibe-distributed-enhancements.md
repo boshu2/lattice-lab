@@ -1,3 +1,10 @@
+---
+id: council-2026-02-12-vibe-distributed-enhancements
+type: council
+date: '2026-02-12'
+rig: lattice-lab
+---
+
 # Vibe: Distributed Systems Enhancements
 
 **Date:** 2026-02-12

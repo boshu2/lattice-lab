@@ -1,3 +1,10 @@
+---
+id: rpi-2026-02-12-phase-6-summary
+type: rpi
+date: '2026-02-12'
+rig: lattice-lab
+---
+
 # Post-mortem: Phase 2 — Sensor Simulator
 
 ## What went well

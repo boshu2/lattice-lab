@@ -1,3 +1,10 @@
+---
+id: council-2026-02-12-vibe-judge-correctness
+type: council
+date: '2026-02-12'
+rig: lattice-lab
+---
+
 # Vibe Judge: Correctness & Safety
 
 **Verdict:** WARN

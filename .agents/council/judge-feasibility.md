@@ -1,3 +1,10 @@
+---
+id: council-2026-02-12-judge-feasibility
+type: council
+date: '2026-02-12'
+rig: lattice-lab
+---
+
 # Feasibility Pre-Mortem: lattice-lab Enhancement Plan
 
 **Verdict: WARN** | **Confidence: HIGH**

@@ -1,3 +1,10 @@
+---
+id: council-2026-02-12-judge-missing-reqs
+type: council
+date: '2026-02-12'
+rig: lattice-lab
+---
+
 # Pre-Mortem: Missing Requirements Judge
 
 **Verdict: WARN** | Confidence: HIGH

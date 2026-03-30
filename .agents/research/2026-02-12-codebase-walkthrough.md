@@ -1,3 +1,10 @@
+---
+id: research-2026-02-12-codebase-walkthrough
+type: research
+date: '2026-02-12'
+rig: lattice-lab
+---
+
 # Lattice Lab: A Guided Codebase Tour
 
 **Reading this like a K8s operator would:** This system is a mini version of a distributed C2 (command & control) data lattice. If K8s is "orchestrate containers," this is "orchestrate entities" — tracks, assets, and geographic points flowing through a pipeline of watchers that react to changes, exactly like K8s controllers reacting to resource events.

@@ -1,3 +1,10 @@
+---
+id: rpi-2026-02-12-phase-1-summary
+type: rpi
+date: '2026-02-12'
+rig: lattice-lab
+---
+
 # Phase 1 Summary: Research
 
 **Goal:** Enhance lattice-lab with production-grade distributed systems patterns for Anduril Lattice interview prep. Test-driven. All Go, no Rust.

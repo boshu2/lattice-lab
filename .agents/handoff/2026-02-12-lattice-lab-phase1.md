@@ -1,3 +1,11 @@
+---
+id: handoff-2026-02-12-lattice-lab-phase1
+type: handoff
+date: '2026-02-12'
+rig: lattice-lab
+status: Between tasks — Phase 1 done, Phase 2 (Sensor Simulator) ready to start
+---
+
 # Handoff: lattice-lab Phase 1 Complete
 
 **Date:** 2026-02-12

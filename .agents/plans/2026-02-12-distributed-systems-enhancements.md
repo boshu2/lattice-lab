@@ -1,3 +1,11 @@
+---
+id: plan-2026-02-12-distributed-systems-enhancements
+type: plan
+date: '2026-02-12'
+rig: lattice-lab
+source: '`.agents/council/2026-02-12-brainstorm-lattice-enhancements.md`'
+---
+
 # Plan: Distributed Systems Enhancements for Anduril Interview Prep
 
 **Date:** 2026-02-12

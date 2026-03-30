@@ -1,3 +1,11 @@
+---
+id: rpi-2026-02-12-phase-4-summary
+type: rpi
+date: '2026-02-12'
+rig: lattice-lab
+epic: ll-4ii (CLOSED)
+---
+
 # Phase 4 Summary: Crank (Implementation)
 
 **Epic:** ll-4ii (CLOSED)
@@ -26,3 +34,10 @@
 - Origin-node echo suppression — prevents infinite relay loops
 - Functional options for Store.New() — backward-compatible API change
 - Listener-level partition — ~50 lines vs 200+ TCP proxy
+
+<!-- mind:auto-start -->
+## Connections
+
+- **Next in RPI chain:** [[lattice-lab/.agents/council/2026-02-12-post-mortem-distributed-enhancements]]
+
+<!-- mind:auto-end -->

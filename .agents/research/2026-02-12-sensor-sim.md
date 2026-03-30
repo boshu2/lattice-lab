@@ -1,3 +1,10 @@
+---
+id: research-2026-02-12-sensor-sim
+type: research
+date: '2026-02-12'
+rig: lattice-lab
+---
+
 # Research: Phase 2 — Sensor Simulator
 
 **Date:** 2026-02-12

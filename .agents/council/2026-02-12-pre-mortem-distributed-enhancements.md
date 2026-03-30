@@ -1,3 +1,10 @@
+---
+id: council-2026-02-12-pre-mortem-distributed-enhancements
+type: council
+date: '2026-02-12'
+rig: lattice-lab
+---
+
 # Pre-Mortem: Distributed Systems Enhancements
 
 **Date:** 2026-02-12

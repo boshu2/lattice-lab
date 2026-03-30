@@ -1,3 +1,11 @@
+---
+id: council-2026-02-12-post-mortem-distributed-enhancements
+type: council
+date: '2026-02-12'
+rig: lattice-lab
+epic: ll-4ii (CLOSED)
+---
+
 # Post-Mortem: Distributed Systems Enhancements
 
 **Date:** 2026-02-12
@@ -69,3 +77,10 @@
 | 4 | Watcher drop event instrumentation | tech-debt | low |
 | 5 | Fusion spatial indexing for scale | tech-debt | low |
 | 6 | CLAUDE.md update with new packages/features | process | medium |
+
+<!-- mind:auto-start -->
+## Connections
+
+- **Previous in RPI chain:** [[lattice-lab/.agents/rpi/phase-4-summary]]
+
+<!-- mind:auto-end -->

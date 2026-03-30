@@ -1,3 +1,10 @@
+---
+id: rpi-2026-02-12-phase-5-summary
+type: rpi
+date: '2026-02-12'
+rig: lattice-lab
+---
+
 # Phase 5 Summary: Vibe (Final Validation)
 
 **Verdict:** WARN (auto-proceed)

@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "verdict": "WARN",
+  "confidence": "HIGH",
+  "key_insight": "Plan omits proto schema changes, Store.New() migration strategy, CRDT Any-type dispatch, replication loop prevention, and approval gate goroutine lifecycle management.",
+  "findings": [
+    {
+      "severity": "critical",
+      "category": "missing-requirements",
+      "description": "HLC timestamps and CRDT merge require proto schema changes (new HLC fields on Entity, merge metadata) but no proto evolution issue exists. buf generate must be re-run, gen/ code changes, and every service importing entityv1 recompiles. The plan says 'no external dependencies' but HLC and CRDT add new fields to entity.proto that all existing consumers must handle. No backward-compatibility analysis for the wire format.",
+      "location": "Wave 1 (HLC + CRDT issues)",
+      "recommendation": "Add explicit issue: 'Proto schema evolution for HLC/CRDT fields' covering entity.proto changes, buf generate, and verifying all existing services still compile and pass tests with the new fields."
+    },
+    {
+      "severity": "critical",
+      "category": "architecture",
+      "description": "Store.New() currently takes zero arguments. Adding a node ID parameter is a breaking change to every call site: store_test.go (7 calls to New()), grpc_test.go (startTestServer calls store.New()), and any cmd/ binary that constructs a store. The plan does not enumerate these call sites or describe a migration path (e.g., NewWithNodeID vs changing New's signature).",
+      "location": "Wave 1 HLC issue",
+      "recommendation": "Either (a) add a functional options pattern: New(opts ...Option) preserving zero-arg default with auto-generated node ID, or (b) explicitly list all 9+ call sites that must be updated and include them in the issue scope."
+    },
+    {
+      "severity": "critical",
+      "category": "missing-requirements",
+      "description": "CRDT merge on protobuf Any components requires type-aware dispatch. Components are map[string]*anypb.Any. To merge two entities' components, you must unmarshal each Any, apply type-specific merge logic (max for ThreatLevel, union for TaskCatalog tasks, latest-writer-wins for Position/Velocity), then re-marshal. The plan mentions CRDT merge but does not specify the per-component-type merge strategies or the unmarshal/remarshal pipeline. Without this, the implementer will either (a) skip merge and do full-entity LWW (defeating the purpose) or (b) make ad-hoc decisions that create inconsistencies.",
+      "location": "Wave 1 CRDT issue",
+      "recommendation": "Define a ComponentMerger interface or merge strategy registry. Document merge semantics for each of the 5 existing component types: Position (LWW), Velocity (LWW), Classification (LWW by confidence), Threat (max level), TaskCatalog (union of tasks). Include this in the issue acceptance criteria."
+    },
+    {
+      "severity": "critical",
+      "category": "architecture",
+      "description": "Mesh relay currently does fire-and-forget replication: watch local -> forward to peer. With CRDT merge, the relay on node A forwards to node B, which triggers an update event on B, which B's relay forwards back to A, creating an infinite replication loop. The plan does not address loop prevention (origin tagging, event source filtering, or vector clocks on relay events).",
+      "location": "Wave 1 CRDT + Wave 2 partition test",
+      "recommendation": "Add origin-node metadata to replicated events. Relay must skip events that originated from a peer (not locally). This is architecturally fundamental and must be designed before CRDT merge can work in the mesh."
+    },
+    {
+      "severity": "significant",
+      "category": "missing-requirements",
+      "description": "Approval gate introduces a timer goroutine per HIGH-threat entity that fires after a timeout. If the entity is deleted (or the task-manager shuts down) before the timer fires, the goroutine leaks. The existing Store has TTL-based reaper as precedent, but the approval gate timer is per-entity in the task-manager process, not in the store. No cleanup-on-delete or cleanup-on-shutdown mechanism is described.",
+      "location": "Wave 3 approval gate issue",
+      "recommendation": "Require a cancel map (entityID -> context.CancelFunc) that is cleaned up on entity delete events and on Manager.Run context cancellation. Add a test case: 'entity deleted while approval pending does not leak goroutine'."
+    },
+    {
+      "severity": "significant",
+      "category": "missing-requirements",
+      "description": "Sensor fusion creates fused entities from source tracks. When a source track is deleted (via TTL expiry or manual deletion), there is no described mechanism to clean up the corresponding fused entity. The fused entity becomes an orphan with stale data. The store's existing TTL/reaper mechanism could help, but the plan does not wire fusion entities into TTL management.",
+      "location": "Wave 4 sensor fusion issue",
+      "recommendation": "Define fused entity lifecycle: either (a) fused entities inherit shortest-TTL of their sources, (b) fusion service watches delete events and cleans up fused entities, or (c) fused entities have their own TTL refreshed on each fusion cycle. Include cleanup test case."
+    },
+    {
+      "severity": "significant",
+      "category": "missing-requirements",
+      "description": "Bandwidth budgeting via token bucket needs to know the byte size of each EntityEvent before deciding whether to send it. The plan does not specify how to measure proto message size. Options: proto.Size() on the marshaled message (requires marshaling twice -- once to measure, once to send), or estimate from component count. Neither is stated. Also unclear: when budget is exhausted, does the relay drop events, queue them, or prioritize by entity type/threat level?",
+      "location": "Wave 3 bandwidth budget issue",
+      "recommendation": "Specify: (a) use proto.Size() for measurement, (b) define drop-vs-queue policy (drop with metric is simplest), (c) add priority so HIGH threat entities are never dropped. Include byte-size estimation test."
+    },
+    {
+      "severity": "significant",
+      "category": "missing-requirements",
+      "description": "The plan mentions a radar-sim binary for sensor fusion but the Makefile has no build target for it. The existing Makefile builds exactly 5 binaries. No issue covers Makefile updates. Similarly, no issue covers proto changes needed for new component types (fused position, radar-specific components).",
+      "location": "Wave 4 sensor fusion + general",
+      "recommendation": "Add Makefile target for radar-sim. Add proto definitions for any new component types (FusedPositionComponent, RadarReturnComponent). Include 'make build' as acceptance criteria for the sensor fusion issue."
+    },
+    {
+      "severity": "significant",
+      "category": "scope",
+      "description": "The CLI currently has 3 commands (list, get, watch). The approval gate feature requires approve/deny CLI commands. These need: (a) a new gRPC RPC or a component-based convention (writing an 'approval' component), (b) new Cobra subcommands, (c) entity ID argument handling. This is at least 100 lines of new CLI code plus potentially a new RPC. Is this scoped in the approval gate issue or does it need its own issue?",
+      "location": "Wave 3 approval gate issue",
+      "recommendation": "Either explicitly scope CLI commands within the approval gate issue (with line estimate) or create a separate 'CLI: add approve/deny commands' issue. Define the approval mechanism: new RPC (ApproveEntity) vs. component convention (write approval_decision component)."
+    },
+    {
+      "severity": "significant",
+      "category": "missing-requirements",
+      "description": "Partition test harness (Wave 2) creates 3 store instances with relays. The existing test infrastructure (startTestServer in grpc_test.go) allocates random ports. But the partition test needs to dynamically block/unblock connections between specific peers. No mechanism for this exists. Options: (a) proxy layer that can be toggled, (b) inject transport-level fault into gRPC dial options, (c) use Store-level watcher disconnect. The plan does not specify the partition injection mechanism.",
+      "location": "Wave 2 partition test issue",
+      "recommendation": "Specify partition injection approach. Recommend: wrap peer gRPC connections in a controllable proxy (e.g., a custom grpc.DialOption or a net.Listener wrapper that can be paused/resumed). Include the proxy implementation in the issue scope."
+    },
+    {
+      "severity": "minor",
+      "category": "missing-requirements",
+      "description": "HLC node ID uniqueness is unaddressed. If two nodes accidentally get the same node ID, HLC ordering breaks silently. The plan asks 'how does a new node get its ID?' but does not answer it. For a learning lab, hostname or random UUID is fine, but it should be explicit.",
+      "location": "Wave 1 HLC issue",
+      "recommendation": "Default to hostname-based node ID with random suffix. Document that node ID must be unique per store instance. Add a test that two stores with different node IDs produce correctly ordered HLC timestamps."
+    },
+    {
+      "severity": "minor",
+      "category": "missing-requirements",
+      "description": "No issue covers updating the GOALS.yaml with new quality gates for the 6 new features. The existing GOALS.yaml has 12 goals covering current functionality. New features (HLC, CRDT, partition tolerance, approval gate, bandwidth, fusion) should have corresponding goals to prevent regression.",
+      "location": "All waves",
+      "recommendation": "Add a final issue or acceptance criteria: update GOALS.yaml with goals for each new feature (e.g., 'hlc-ordering: HLC timestamps are monotonically increasing across nodes')."
+    },
+    {
+      "severity": "minor",
+      "category": "missing-requirements",
+      "description": "The 'no external dependencies' constraint is not reconciled with HLC implementation. A proper HLC requires careful clock management. While implementable without external deps, the plan should acknowledge that the implementer must build HLC from scratch (~100-150 lines) rather than importing a library like github.com/cockroachdb/cockroach/pkg/util/hlc.",
+      "location": "Wave 1 HLC issue",
+      "recommendation": "Explicitly note in the issue that HLC must be implemented from scratch. Reference the Lamport/HLC paper or provide pseudocode for the merge function: max(local_physical, remote_physical, wall_clock) with logical counter tiebreaker."
+    }
+  ],
+  "recommendation": "Before implementation, add 3 blocking issues: (1) Proto schema evolution plan for HLC/CRDT fields with backward-compat analysis, (2) Replication loop prevention design for mesh relay with CRDT, (3) Component-type-specific merge strategy registry. These are architectural prerequisites that, if deferred, will cause rework across all 4 waves."
+}

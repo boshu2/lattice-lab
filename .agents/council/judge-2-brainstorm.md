@@ -1,3 +1,10 @@
+---
+id: council-2026-02-12-judge-2-brainstorm
+type: council
+date: '2026-02-12'
+rig: lattice-lab
+---
+
 # Judge 2 Brainstorm: lattice-lab Enhancements for Anduril Interview Prep
 
 ## Key Insight

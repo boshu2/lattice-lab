@@ -1,3 +1,10 @@
+---
+id: council-2026-02-12-brainstorm-lattice-enhancements
+type: council
+date: '2026-02-12'
+rig: lattice-lab
+---
+
 # Council Report: lattice-lab Enhancements for Anduril Interview Prep
 
 **Date:** 2026-02-12

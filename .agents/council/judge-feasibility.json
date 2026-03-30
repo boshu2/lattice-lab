@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "verdict": "WARN",
+  "confidence": "HIGH",
+  "key_insight": "HLC stale-write rejection will silently break classifier and task-manager update loops, and the ORSet + partition proxy are each underscoped by at least 2x.",
+  "findings": [
+    {
+      "severity": "critical",
+      "category": "architecture",
+      "description": "Store HLC stale-write rejection breaks existing callers. Classifier.classifyEntity() receives an entity from a watch event, mutates its components in-place, then calls UpdateEntity. If sensor-sim updates the same entity between the watch event and the classify update, the classifier's HLC will be stale and the update will be rejected. The classifier has no retry or re-fetch logic — it will silently drop the classification. Same pattern in task.Manager.processEntity(). Both services operate on a stale snapshot of the entity by design (watch delivers a point-in-time copy). This is not a 'fix the caller' problem — it requires a read-modify-write loop or component-level partial updates, which is a fundamental API change.",
+      "location": "Issue 3 (Store HLC) + classifier.go:104-136 + task/manager.go:119-158",
+      "recommendation": "Either (a) make HLC comparison per-component rather than per-entity, so classifier writing 'classification' doesn't conflict with sensor-sim writing 'position', or (b) add a CompareAndSwap with automatic retry helper that re-reads before retrying, or (c) scope HLC to mesh-relay only and skip it for local writes. Option (a) is the cleanest but requires tracking HLC per component key, not per entity."
+    },
+    {
+      "severity": "critical",
+      "category": "scope",
+      "description": "ORSet in ~300 lines without external deps is unrealistic for correctness. A proper ORSet requires: (1) unique tags per add operation, (2) a causal context (vector clock or dotted version vector) to track which adds a remove has observed, (3) merge of causal contexts on sync, (4) serialization/deserialization of the tag set. The standard reference implementation (Shapiro et al.) needs a tag-set per element, and the remove operation must capture exactly the tags it has observed. Without this, you get the add-wins-vs-remove ambiguity bug. A map[string]*anypb.Any component store is not an ORSet — it's a last-writer-wins register per key. If the plan actually means LWW-per-component-key (which is what the store already nearly does), call it that and skip the ORSet complexity.",
+      "location": "Issue 4 (CRDT ORSet)",
+      "recommendation": "Replace ORSet with LWW-Element-Map (one HLC timestamp per component key). This is what the entity.Components map naturally supports, is far simpler (~100 lines), and solves the actual merge problem for this domain. Reserve true ORSet for a future issue if set-membership semantics are actually needed."
+    },
+    {
+      "severity": "significant",
+      "category": "feasibility",
+      "description": "Mesh CRDT merge (Issue 6) has a non-atomic GET+merge+PUT race window. The relay currently does fire-and-forget forwarding. The plan to add GET(peer) + merge + PUT(peer) introduces a window where another relay or local writer can update the peer entity between the GET and PUT, and that concurrent write will be silently overwritten. With bidirectional relay (TestRelayBidirectional shows this is already tested), the echo problem is real: relay1 forwards to store2, relay2 sees the update and forwards back to store1, creating an infinite loop. The existing code already has this latent bug (the bidirectional test passes by luck with stable data), but CRDT merge will amplify it because every merge produces a new update event.",
+      "location": "Issue 6 (Mesh CRDT) + mesh/relay.go:140-160",
+      "recommendation": "Add an origin-ID or hop-count to entity metadata so relays can suppress echo. For atomicity, either (a) add a conditional-update RPC that accepts an expected HLC and returns CONFLICT if stale, or (b) accept that last-writer-wins is good enough for a learning lab and document the race. The echo suppression is mandatory regardless."
+    },
+    {
+      "severity": "significant",
+      "category": "feasibility",
+      "description": "Approval gate timer goroutines (Issue 5) have three race conditions. (1) Timer fires concurrently with explicit approve — both try to transition state. (2) De-escalation from HIGH to LOW while approval is pending — the gate must cancel the pending timer, but if the timer callback is already executing, you get a double-transition. (3) If the entity is deleted while a timer is pending, the timer callback will attempt to update a non-existent entity. All three require careful mutex choreography with the store's own locking, and testing timer races in unit tests requires either a fake clock or flaky time.Sleep-based tests.",
+      "location": "Issue 5 (Approval Gate)",
+      "recommendation": "Use a single-goroutine event loop pattern (select on approve channel, deny channel, timer channel, cancel channel) rather than per-entity timer goroutines. This serializes all state transitions and eliminates the race conditions by design. Inject a clock interface for deterministic testing."
+    },
+    {
+      "severity": "significant",
+      "category": "scope",
+      "description": "Programmable TCP proxy for partition testing (Issue 9) is 2-3x the estimated effort. A reliable TCP proxy in Go needs: (1) bidirectional goroutine-per-connection copying, (2) clean shutdown without leaked goroutines (the test will flake if connections hang), (3) toggling partition mid-stream without corrupting in-flight gRPC frames (gRPC uses HTTP/2, so partial frame drops cause stream resets, not clean partition behavior), (4) handling the gRPC keepalive/reconnect behavior after partition heals. The gRPC-specific behavior is the hidden complexity — a raw TCP proxy that drops bytes will cause gRPC to enter error states that don't look like network partitions, they look like protocol errors.",
+      "location": "Issue 9 (Partition Tests)",
+      "recommendation": "Use net.Listener interception instead of TCP proxy: wrap the gRPC listener with an accept-gating mechanism that refuses new connections during partition, and close existing connections. This is ~50 lines vs ~200 for a full proxy, and produces cleaner partition semantics for gRPC. Alternatively, test at the store.Store level by injecting a mock gRPC client that returns Unavailable errors, avoiding the network layer entirely."
+    },
+    {
+      "severity": "significant",
+      "category": "architecture",
+      "description": "Sensor fusion track correlation (Issue 7) has a deceptively hard parameter problem. A static distance threshold fails for targets at different altitudes and speeds — two tracks 5km apart at 30,000ft may be the same aircraft, while two tracks 1km apart at ground level are definitely different vehicles. The plan doesn't specify whether correlation is on position only or position+velocity+type. Without velocity-gate matching, a static threshold will either produce false merges (threshold too large) or miss correlations (threshold too small). This is a known hard problem in tracking literature (nearest-neighbor vs. auction assignment).",
+      "location": "Issue 7 (Sensor Fusion)",
+      "recommendation": "For a learning lab, use a simple 2D Euclidean distance gate on lat/lon with a configurable threshold (default e.g. 0.01 degrees ~1km), and require matching EntityType. Document that this is a simplification. Do NOT attempt adaptive thresholds — that's a semester project. Add the threshold as a Config field so it can be tuned in tests."
+    },
+    {
+      "severity": "significant",
+      "category": "scope",
+      "description": "Batching all proto changes in Issue 2 is a single-point-of-failure for the entire plan. The proto changes include: HLC fields on Entity, CRDT metadata, approval gate state, sensor fusion metadata, and bandwidth budget config. If any of these are wrong, the downstream issues are blocked on a proto re-generation cycle. Proto iteration is slow — change .proto, run buf generate, fix Go compilation errors, re-run tests. If the first pass gets the HLC field placement wrong (e.g., should it be on Entity or per-component?), every downstream issue needs rework.",
+      "location": "Issue 2 (Proto changes)",
+      "recommendation": "Split proto changes into two batches: (a) Issue 2a: HLC + CRDT fields needed for Wave 1, (b) Issue 2b: approval gate + fusion + budget fields for Wave 2-3. This lets Wave 1 start immediately and defers speculative proto design for later features. Each batch is smaller and easier to get right."
+    },
+    {
+      "severity": "minor",
+      "category": "feasibility",
+      "description": "Edge bandwidth budgeting (Issue 8) depends on mesh relay having per-entity priority awareness, but the relay currently treats all entities identically. Adding priority-based throttling requires: (1) inspecting entity components to determine threat level (coupling relay to domain logic), (2) a token-bucket or leaky-bucket rate limiter per peer, (3) a priority queue for pending forwards. The rate limiter alone is fine, but coupling the relay to threat-level semantics breaks its current clean separation from domain logic.",
+      "location": "Issue 8 (Edge Bandwidth Budget)",
+      "recommendation": "Make bandwidth budgeting work on entity metadata (e.g., a 'priority' field in Entity proto) rather than inspecting threat components. The classifier already runs before relay — have it set a priority field. This keeps the relay domain-agnostic."
+    },
+    {
+      "severity": "minor",
+      "category": "scope",
+      "description": "Wave dependency Issue 6 (Mesh CRDT) depends on both Issue 3 (HLC) and Issue 4 (ORSet). But the mesh relay currently works without either. If Issue 4 is descoped to LWW-Map as recommended, Issue 6 becomes much simpler. However, if Issues 3 and 4 are both delayed, Wave 2 is entirely blocked. The critical path is proto changes -> HLC -> CRDT -> Mesh CRDT, which is 4 serial dependencies.",
+      "location": "Wave dependencies",
+      "recommendation": "Issue 6 should depend on Issue 3 only (HLC), not on Issue 4. LWW-per-component-key merge in the relay only needs timestamps, not ORSet semantics. This removes one link from the critical chain and allows Issue 4 and Issue 6 to parallelize."
+    }
+  ],
+  "recommendation": "Before starting implementation: (1) Resolve the HLC stale-write problem for classifier/task-manager — this is a design decision, not an implementation detail, and it changes the Store API contract. (2) Replace ORSet with LWW-Element-Map. (3) Split proto Issue 2 into two batches. These three changes reduce the plan risk from 'likely to stall in Wave 1' to 'achievable with expected friction'."
+}
